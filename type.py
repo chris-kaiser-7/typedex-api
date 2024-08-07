@@ -123,6 +123,11 @@ async def generate_type(request: dict):
                     "type": subtype["name"],
                     "general_description": subtype["general_description"],
                     "physical_description": subtype["physical_description"],
+                    "avg_height": subtype["avg_height"],
+                    "avg_weight": subtype["avg_weight"],
+                    "diet": subtype["diet"],
+                    "hp_points": subtype["hp_points"],
+                    "affinities": subtype["affinities"],
                     "ancestry": new_ancestry,
                     "children": []
                 })

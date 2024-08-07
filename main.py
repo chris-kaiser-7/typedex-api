@@ -8,6 +8,9 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.openapi.models import SecurityScheme as SecuritySchemeModel
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel, OAuthFlowPassword
 import os
+from dotenv import load_dotenv
+
+load_dotenv() # only needed for dev
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -55,6 +58,8 @@ app.add_middleware(
 from type import router as type_router
 from subtypes import router as subtype_router
 from auth import router as auth_router
+# from forgot_password import router as forgot_pass_router
 app.include_router(type_router, prefix="/api/v1")
 app.include_router(subtype_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
+# app.include_router(forgot_pass_router, prefix="/api/v1")
