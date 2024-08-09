@@ -55,4 +55,4 @@ async def create_subtype(subtype: Subtype):
     result = await app.subtypes_collection.insert_one(subtype_dict)
     if not result.acknowledged:
         raise HTTPException(status_code=500, detail="Failed to create subtype")
-    return subtype_dict
+    return subtype_dict #not a valid return type

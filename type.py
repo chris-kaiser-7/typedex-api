@@ -10,48 +10,44 @@ router = APIRouter()
 
 created_assistants = {}
 
-def generate_prompt(subtype, count, general_desc, ansestry):
-    return f'Please create {count} subtypes of {subtype}. Type {subtype} has a general descirpiton of {general_desc} and an ansestry of {ansestry}'
+def generate_prompt(type_name, count, properties, ansestry):
+    return f'Please create {count} subtypes of {type_name}. Type {type_name} has the properties {properties} and an ansestry of {ansestry}'
+
 model = "gpt-4o"
 
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @router.post("/type")
 async def generate_type(request: dict):
+    #use pydantic instead
     type_name = request.get("type")
-    assistant_name = request.get("assistant")
     count = request.get("count")
 
-    if not type_name or not assistant_name or not count or not isinstance(count, int) or count <= 0 or count > 10:
-        raise HTTPException(status_code=400, detail="Invalid request")
+    #use pydantic instead
+    if not type_name or not count or not isinstance(count, int) or count <= 0 or count > 10: #use pydandic instead
+        raise HTTPException(status_code=400, detail="Invalid request") 
 
-    assistant_data = await get_assistant(assistant_name)
-    if not assistant_data:
-        assistant_data = await app.assistant_collection.find_one({"name": assistant_name})
-        if not assistant_data:
-            raise HTTPException(status_code=404, detail="Assistant not found")
-        await set_assistant(assistant_name, assistant_data)
-
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-
-    if assistant_name not in created_assistants:
-        new_assistant = openai.beta.assistants.create(
-            name=assistant_name,
-            instructions=assistant_data.get("instructions"),
-            model=model
-        )
-
-        created_assistants[assistant_name] = new_assistant.id
-    
-    assistant_id = created_assistants[assistant_name]
-
-    thread = openai.beta.threads.create()
-    
+    #use pydantic to type check db obj?
     parent = await app.subtypes_collection.find_one({ "type": type_name })
     if not parent:
         raise HTTPException(status_code=404, detail="Parent not found")
-    general_desc = parent["general_description"] 
+
+    book = await app.book_collection.find_one({"name": parent['book'] })
+
+    if book['name'] not in created_assistants:
+        new_assistant = openai.beta.assistants.create(
+            name=book['name'],
+            instructions=book['instructions'],
+            model=model
+        )
+        created_assistants[book['name']] = new_assistant.id
+    
+    assistant_id = created_assistants[book['name']]
+
+    thread = openai.beta.threads.create()
+    parent_properties = parent["properties"]
     ancestry = parent['ancestry'] 
-    prompt = generate_prompt(type_name, count, general_desc, ancestry)
+    prompt = generate_prompt(type_name, count, parent_properties, ancestry)
 
     openai.beta.threads.messages.create(
         thread_id=thread.id,
@@ -65,6 +61,7 @@ async def generate_type(request: dict):
 
     while True:
         run_status = openai.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+        # need to have fail safe or timeout status "completed" not returned
         if run_status.status == "completed":
             messages = openai.beta.threads.messages.list(thread_id=thread.id)
             response = next(msg for msg in messages.data if msg.role == "assistant").content[0].text.value
@@ -75,63 +72,55 @@ async def generate_type(request: dict):
                 "thread_id": thread.id,
                 "user_message": prompt,
                 "assistant_response": response,
-                "timestamp": run_status.completed_at  # Or use another timestamp field
+                "timestamp": run_status.completed_at 
             })
 
-            #better parser
+            #need better parser
             parsed_response = "\n".join(response.split("\n")[1:-1])
             subtypes = json.loads(parsed_response)
 
-            for subtype in subtypes:
-                if "name" not in subtype or "general_description" not in subtype or "physical_description" not in subtype:
-                    print("invalid parse")
+            #cap at 10 children (placeholder)
+            total_time = 0
+            remaining_children = 10 - len(parent.get("children"))
+            for subtype in subtypes[:remaining_children]:
+                #dynamicly generate pydandic model here?
+                if "name" not in subtype:
+                    print(f'invalid parse for {subtype}')
                     continue
 
-                #handle duplicate types since its not unique 
-                empty_check = await app.subtypes_collection.count_documents({ "type": subtype["name"] })
+                # Handle duplicate types
+                # Can optimize to have a type book hash table in memory but would have distributed issues
+                # This can be better optimized.
+                # Perhaps the uniqueness should be ancestry-based instead of based on typename?
+                # If this is the case, then it is as simple as checking the parent's children
+                # Maybe this could be done in one bulk lookup? 
+                # 10 children takes aboue 0.03 seconds of waiting
+                empty_check = await app.subtypes_collection.count_documents({ "type": subtype["name"], "book": book["name"] })
                 if empty_check != 0:
                     print('duplicate type')
                     continue
 
-                # Check if the parent already has 10 children
-                parent = await app.subtypes_collection.find_one({ "type": type_name })
-                if parent and len(parent.get("children", [])) >= 10:
-                    raise HTTPException(status_code=400, detail="Parent already has 10 children")
+                query = { "type": type_name }
+                update = {"$push": {"children": subtype["name"]}}
+                app.subtypes_collection.update_one(query, update)
 
-                # Check if the parent type exists
-                parent_type = await app.subtypes_collection.find_one({ "type": type_name })
-
-                if parent_type:
-                    # If it exists, update its children
-                    query = { "type": type_name }
-                    update = {"$push": {"children": subtype["name"]}}
-                    app.subtypes_collection.update_one(query, update)
-                else:
-                    # If it doesn't exist, create a new document for the parent type
-                    parent_type = {
-                        "type": type_name,
-                        "children": [subtype["name"]],
-                        "ancestry": []
-                    }
-                    app.subtypes_collection.insert_one(parent_type)
-
-                new_ancestry = parent_type.get("ancestry", [])
+                new_ancestry = parent.get("ancestry", [])
                 new_ancestry.append(type_name)
 
+                properties = {}
+                for field in book['fields']:
+                    properties[field] = subtype[field]
+
                 app.subtypes_collection.insert_one({
-                    "parent_type": type_name,
+                    "parent": type_name,
                     "type": subtype["name"],
-                    "general_description": subtype["general_description"],
-                    "physical_description": subtype["physical_description"],
-                    "avg_height": subtype["avg_height"],
-                    "avg_weight": subtype["avg_weight"],
-                    "diet": subtype["diet"],
-                    "hp_points": subtype["hp_points"],
-                    "affinities": subtype["affinities"],
+                    "properties": properties,
                     "ancestry": new_ancestry,
-                    "children": []
+                    "children": [],
+                    "book": book['name']
                 })
 
+            print(f'total time {total_time}')
             break
 
     return JSONResponse(content={"subtypes": subtypes}, status_code=200)

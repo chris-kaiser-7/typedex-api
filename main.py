@@ -28,6 +28,7 @@ async def lifespan(app: FastAPI):
     app.types_log_collection = app.database["types_log"]
     app.subtypes_collection = app.database["subtypes"]
     app.user_collection = app.database["users"]
+    app.book_collection = app.database["books"]
     
     yield
     app.mongodb_client.close()
@@ -58,8 +59,10 @@ app.add_middleware(
 from type import router as type_router
 from subtypes import router as subtype_router
 from auth import router as auth_router
+from book import router as book_router
 # from forgot_password import router as forgot_pass_router
 app.include_router(type_router, prefix="/api/v1")
 app.include_router(subtype_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 # app.include_router(forgot_pass_router, prefix="/api/v1")
+app.include_router(book_router, prefix="/api/v1")
