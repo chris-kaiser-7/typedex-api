@@ -1,10 +1,12 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 import openai
 from cache import get_assistant, set_assistant
 import os
 from main import app
 import json
+from typing import Annotated
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -17,17 +19,16 @@ model = "gpt-4o"
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+class TypeRequest(BaseModel):
+    type: str
+    count: Annotated[int, Query(gt=0, lt=11)] = 1 
+
 @router.post("/type")
-async def generate_type(request: dict):
+async def generate_type(request: TypeRequest):
     #use pydantic instead
-    type_name = request.get("type")
-    count = request.get("count")
+    type_name = request.type
+    count = request.count
 
-    #use pydantic instead
-    if not type_name or not count or not isinstance(count, int) or count <= 0 or count > 10: #use pydandic instead
-        raise HTTPException(status_code=400, detail="Invalid request") 
-
-    #use pydantic to type check db obj?
     parent = await app.subtypes_collection.find_one({ "type": type_name })
     if not parent:
         raise HTTPException(status_code=404, detail="Parent not found")
