@@ -1,0 +1,137 @@
+{
+    "animal_friends": [
+      {
+        "name": "Squirrel Whisperer",
+        "general_description": "Squirrel Whisperers have a natural affinity with squirrels, often seen surrounded by these agile creatures. They can relay messages or retrieve small objects with the help of their furry friends.",
+        "physical_description": "Small, nimble gnomes with bright eyes and quick, precise movements. They often wear clothing that mimics the colors of tree bark and leaves."
+      },
+      {
+        "name": "Deer Guardian",
+        "general_description": "Deer Guardians form deep connections with deer and similar woodland ungulates. They can call upon these animals for protection, guidance, and transport through dense forests.",
+        "physical_description": "Graceful and tall for gnomes, with long limbs and a serene presence. They usually wear earthy tones and carry antler-shaped accessories."
+      },
+      {
+        "name": "Bird Caller",
+        "general_description": "Bird Callers have a special bond with birds, capable of understanding their songs and communicating with them. They can summon flocks for assistance or reconnaissance.",
+        "physical_description": "Delicate and light-footed, they possess bright, feather-adorned clothing and often have bird-like features, such as sharp, keen eyesight and quick movements."
+      },
+      {
+        "name": "Rabbit Keeper",
+        "general_description": "Rabbit Keepers have a special affinity for rabbits and hares, often aiding in their care and protection. They can summon these creatures for tunneling or scouting missions.",
+        "physical_description": "Short and nimble, with twitchy noses and large, expressive eyes. They usually wear soft, fur-trimmed garments that allow for quick, silent movement."
+      },
+      {
+        "name": "Fox Companion",
+        "general_description": "Fox Companions share a cunning and playful bond with foxes, utilizing their clever nature for trickery and stealth. They are often seen with a fox by their side.",
+        "physical_description": "Sly and agile, with an air of mischief about them. They dress in vibrant, reddish hues and carry accessories resembling fox tails or ears."
+      },
+      {
+        "name": "Bear Ward",
+        "general_description": "Bear Wards have the strength and protective instincts of bears. They can call upon these powerful creatures for defense and assistance with heavy tasks.",
+        "physical_description": "Stocky and robust, with a commanding presence. They often wear bear pelts and have strong, muscular builds that mirror their animal counterparts."
+      }
+    ]
+  }
+
+
+  This GPT generates lists of subtypes when given a classification of a creature, a general description of a creature, and a ancestry of a creature. It provides specific examples based on the type and number requested. Each subtype will include a general description and a physical description formatted in JSON. The GPT ensures that the subtypes are relevant and well-known, avoiding obscure references unless specified otherwise. It will give concise, accurate lists that are easy to understand. When replying to a prompt, the response should always be in JSON format. The response should be a list of types. Each type should have a name field, a general_description field, and a physical_description field. Here is an example of what the structure of the json should look like:
+  ```json
+  [
+      {
+          "name": "the name",
+          "general_description": "the general description",
+          "physical_description": "the physical description"
+      },
+      {
+          "name": "the name",
+          "general_description": "the general description",
+          "physical_description": "the physical description"
+      },
+      {
+          "name": "the name",
+          "general_description": "the general description",
+          "physical_description": "the physical description"
+      },
+  ]
+  ```
+
+
+
+{
+  "name": "fantasy1",
+  "fields": ["general_description", "physical_description", "avg_height", "avg_weight", "diet", "hp_points", "affinities"],
+  "field_descriptions": [
+    "the general description",
+    "the physical description",
+    "the average height",
+    "the average weight",
+    "the prefered diet of the creature",
+    "the hit points of the creature",
+    "a list of the affinities of the creature"
+  ],
+  "assistant": "subtype_v3"
+}
+
+```json
+[
+    {
+        "name": "Mountain Goblin",
+        "general_description": "Mountain Goblins are Big Goblins adapted to life in rocky, high-altitude environments.",
+        "physical_description": "Stocky build, rough skin, often brown or grey, with powerful limbs and sharp claws.",
+        "avg_height": "5 feet",
+        "avg_weight": "150 pounds",
+        "diet": "Omnivorous, prefers mountain goats and hardy plants.",
+        "hp_points": "45",
+        "affinities": ["Rock", "Earth"]
+    },
+    {
+        "name": "Swamp Goblin",
+        "general_description": "Swamp Goblins are Big Goblins that dwell in fetid, marshy lands.",
+        "physical_description": "Slender build, greenish skin with warts, elongated limbs, and webbed feet.",
+        "avg_height": "4.8 feet",
+        "avg_weight": "140 pounds",
+        "diet": "Carnivorous, primarily eats fish and small animals.",
+        "hp_points": "40",
+        "affinities": ["Water", "Poison"]
+    },
+    {
+        "name": "Forest Goblin",
+        "general_description": "Forest Goblins are Big Goblins that inhabit dense, wooded areas.",
+        "physical_description": "Lean build, green or brown skin, sharp teeth, and camouflage abilities.",
+        "avg_height": "4.9 feet",
+        "avg_weight": "135 pounds",
+        "diet": "Omnivorous, prefers berries, insects, and small mammals.",
+        "hp_points": "42",
+        "affinities": ["Wood", "Nature"]
+    },
+    {
+        "name": "Cave Goblin",
+        "general_description": "Cave Goblins are Big Goblins that thrive in dark, underground caverns.",
+        "physical_description": "Short and stout, pale or grey skin, large eyes adapted to low light.",
+        "avg_height": "4.7 feet",
+        "avg_weight": "145 pounds",
+        "diet": "Carnivorous, prefers underground creatures and fungi.",
+        "hp_points": "43",
+        "affinities": ["Darkness", "Stone"]
+    },
+    {
+        "name": "Desert Goblin",
+        "general_description": "Desert Goblins are Big Goblins that endure the harsh conditions of arid deserts.",
+        "physical_description": "Lean build, yellow or tan skin, long ears, adapted to conserve water.",
+        "avg_height": "5 feet",
+        "avg_weight": "130 pounds",
+        "diet": "Omnivorous, prefers cacti and small desert animals.",
+        "hp_points": "41",
+        "affinities": ["Fire", "Sand"]
+    },
+    {
+        "name": "Urban Goblin",
+        "general_description": "Urban Goblins are Big Goblins that have adapted to living in human cities and towns.",
+        "physical_description": "Average build, typically grey or dark brown skin, adept at blending in with urban settings.",
+        "avg_height": "4.8 feet",
+        "avg_weight": "135 pounds",
+        "diet": "Omnivorous, scavenges from human waste and leftovers.",
+        "hp_points": "40",
+        "affinities": ["Stealth", "Urban Environment"]
+    }
+]

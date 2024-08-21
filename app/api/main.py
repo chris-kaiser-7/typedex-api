@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
-from cache import init_cache
 from contextlib import asynccontextmanager
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.openapi.models import SecurityScheme as SecuritySchemeModel
@@ -13,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv() # only needed for dev
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def db_lifespan(app: FastAPI):
     # Load the ML model
     app.mongodb_client = AsyncIOMotorClient(os.getenv("ATLAS_URI"))
     app.database = app.mongodb_client["typedex"]
@@ -22,7 +21,7 @@ async def lifespan(app: FastAPI):
     if int(ping_response["ok"]) != 1:
         raise Exception("Problem connecting to database cluster.")
     else:
-        print("Connected to database cluster.")
+        print("Connected to database cluster.") #use logging instead
 
     app.assistant_collection = app.database["assistants"]
     app.types_log_collection = app.database["types_log"]
@@ -35,7 +34,7 @@ async def lifespan(app: FastAPI):
     print("shutdown")
 
 app = FastAPI(
-    lifespan=lifespan,
+    lifespan=db_lifespan,
     # openapi_components={
     #     "securitySchemes": {
     #         "OAuth2PasswordBearer": SecuritySchemeModel(
@@ -48,21 +47,25 @@ app = FastAPI(
     # },
     # openapi={"security": [{"OAuth2PasswordBearer": []}]},
 )
+
+#TODO: allow more appropriate CORS settings
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-)
+) 
 
-from type import router as type_router
-from subtypes import router as subtype_router
-from auth import router as auth_router
-from book import router as book_router
-# from forgot_password import router as forgot_pass_router
-app.include_router(type_router, prefix="/api/v1")
-app.include_router(subtype_router, prefix="/api/v1")
-app.include_router(auth_router, prefix="/api/v1")
-# app.include_router(forgot_pass_router, prefix="/api/v1")
-app.include_router(book_router, prefix="/api/v1")
+# from routers.type import router as type_router
+# from routers.subtypes import router as subtype_router
+# from routers.auth import router as auth_router
+# from routers.book import router as book_router
+# from routers.assistant import router as assistant_router
+
+from .routers import assistant, auth, book, subtypes, type  
+app.include_router(type.router, prefix="/api/v1")
+app.include_router(subtypes.router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(book.router, prefix="/api/v1")
+app.include_router(assistant.router, prefix="/api/v1")

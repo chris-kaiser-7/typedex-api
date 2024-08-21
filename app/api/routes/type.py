@@ -1,14 +1,14 @@
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 import openai
-from cache import get_assistant, set_assistant
 import os
-from main import app
+from ..main import app
 import json
 from typing import Annotated
 from pydantic import BaseModel
-from typing import List
 from asyncio import gather
+from typing import List
+from ..db_models import Subtype, Book
 
 router = APIRouter()
 
@@ -24,21 +24,6 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 class TypeRequest(BaseModel):
     type: str
     count: Annotated[int, Query(gt=0, lt=11)] = 1 
-
-class Subtype(BaseModel):
-    parent: str | None = None 
-    type: str
-    properties: dict[str, str | List[str]] #should this be a list of tuples? 
-    ancestry: List[str]
-    children: List[str]
-    book: str
-
-class Book(BaseModel):
-    name: str
-    instructions: str
-    fields: List[str]
-    field_descriptions: List[str]
-    assistant: str
 
 @router.post("/type")
 async def generate_type(request: TypeRequest) -> List[Subtype]:

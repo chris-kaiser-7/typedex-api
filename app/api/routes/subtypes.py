@@ -1,4 +1,4 @@
-from main import app
+from ..main import app
 from fastapi import APIRouter
 from typing import List
 from bson import ObjectId

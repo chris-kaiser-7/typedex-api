@@ -5,13 +5,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import Optional
 from pydantic import BaseModel, EmailStr
-from main import app
+from ..main import app
+from app.models import User as DB_User
 import os
 
-class DB_User(BaseModel):
-    username: str
-    email: EmailStr
-    hashed_password: str
+# class DB_User(BaseModel):
+#     username: str
+#     email: EmailStr
+#     hashed_password: str
 
 class DB_UserInDB(DB_User):
     id: Optional[str] = None
@@ -59,15 +60,6 @@ async def authenticate_user(username: str, password: str):
         return False
     return user
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(

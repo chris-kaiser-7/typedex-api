@@ -3,18 +3,18 @@ from pydantic import BaseModel, field_validator, model_validator
 from typing_extensions import Self
 from typing import List
 from bson import ObjectId
-from main import app
 from string import Template
+from ..db_models import Book
+from asyncio import gather
 
 def create_string_from_template(template_string, values):
     template = Template(template_string)
     return template.substitute(values)
 
-
 # Define a Pydantic model for the book
-class Book(BaseModel):
+class BookRequest(BaseModel):
     name: str
-    fields: List[str]
+    fields: List[str] #need to add validation that can't have spaces
     field_descriptions: List[str]
     assistant: str
 
@@ -25,26 +25,32 @@ class Book(BaseModel):
         return self
 
 # Create an APIRouter instance
-router = APIRouter()
+router = APIRouter(
+    prefix="/books",
+    tags=["books"]
+)
 
 # Read a book by name
 @router.get("/books/{book_name}")
-async def read_book(book_name: str):
-    book = await app.book_collection.find_one({"name": book_name})
-    if not book:
+async def read_book(book_name: str) -> Book:
+    book_raw = await router.book_collection.find_one({"name": book_name})
+    if not book_raw:
         raise HTTPException(status_code=404, detail="Book not found")
-    # Convert the MongoDB object to a Python dict and return it
-    book["_id"] = str(book["_id"])  # Convert ObjectId to string for JSON serialization
+    book = Book(**book_raw)
+    
     return book
 
 # Create a new book
 @router.post("/books")
-async def create_book(book: Book):
-    found_book = await app.book_collection.find_one({"name": book.name})
+async def create_book(book: BookRequest) -> Book:
+    found_book = router.book_collection.find_one({"name": book.name})
+    assistant = router.assistant_collection.find_one({"name": book.assistant})
+    # await found_book
+    # await assistant
+    await gather(found_book, assistant)
+
     if found_book:
         raise HTTPException(status_code=400, detail="Book already exists")
-
-    assistant = await app.assistant_collection.find_one({"name": book.assistant})
     if not assistant:
         raise HTTPException(status_code=400, detail="Assistant does not exist")
 
@@ -59,13 +65,13 @@ async def create_book(book: Book):
     # Insert the book into the collection
     book_dict = book.model_dump()
     book_dict["instructions"] = instructions
-    app.book_collection.insert_one(book_dict)
+    router.book_collection.insert_one(book_dict)
     return {"message": "Book created successfully", "book": book_dict}
 
 # Delete a book by name
 @router.delete("/books/{book_name}")
 async def delete_book(book_name: str):
-    result = await app.book_collection.delete_one({"name": book_name})
+    result = await router.book_collection.delete_one({"name": book_name})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Book not found")
     return {"message": "Book deleted successfully"}
